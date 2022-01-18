@@ -3,11 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:mauka/screens/slides_page.dart';
 import 'package:mauka/screens/feedback.dart';
-import 'package:mauka/screens/reflect_page1.dart';
+import 'package:mauka/screens/reflect_page.dart';
 import 'package:mauka/screens/get_started.dart';
 import 'package:mauka/screens/signup_page.dart';
-import 'package:mauka/screens/video_recorder.dart';
-import 'screens/home_page.dart';
+import 'screens/course_page.dart';
 import 'screens/login_page.dart';
 import 'screens/splash_page.dart';
 
@@ -32,7 +31,7 @@ class MyApp extends StatelessWidget {
         //   bodyText2: TextStyle(fontSize: 14.0, fontFamily: 'DMSans'),
         // ),
       ),
-      home: VideoRecorder(),
+      home: SplashPage(),
     );
   }
 }

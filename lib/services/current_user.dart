@@ -9,8 +9,8 @@ class CurrentUser {
   bool userExists = false;
   Future<List> checkToken(String token) async {
     dynamic res;
-    await http.post(
-      Uri.parse('${Strings.localhost}users/getinfo'),
+    await http.get(
+      Uri.parse('${Strings.localhost}users/me'),
       headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
     ).then((response) {
       if (response.statusCode == 200) {

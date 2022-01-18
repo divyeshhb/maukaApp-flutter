@@ -30,7 +30,7 @@ dependencies:
   flutter:
     sdk: flutter
   http:  
-  dio:
+  dio: ^4.0.4
  
   tiktoklikescroller:
   flutter_secure_storage: 
@@ -44,6 +44,7 @@ dependencies:
   video_player: 
   camera: ^0.9.4+5
   image_gallery_saver: 
+  flutter_countdown_timer:
   
 
 flutter_icons:
@@ -78,6 +79,9 @@ flutter:
     - assets/images/mauka_whitebg.png
     - assets/images/mauka_darkbg.png
     - assets/images/getstarted.png
+    - assets/images/avatar1.png
+    - assets/images/avatar2.png
+    - assets/images/resume.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

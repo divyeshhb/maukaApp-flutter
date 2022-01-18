@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables
 // ignore_for_file: prefer_const_constructors
 // ignore_for_file: unused_import
+// ignore_for_file: avoid_print
 
 import 'dart:convert';
 
@@ -17,6 +18,7 @@ import 'package:mauka/services/authenticate.dart';
 import 'package:tiktoklikescroller/tiktoklikescroller.dart';
 import 'dart:io';
 import '../strings.dart';
+import 'open_camera.dart';
 
 class LessonsPage extends StatefulWidget {
   const LessonsPage({Key? key, @required this.courseId}) : super(key: key);
@@ -29,6 +31,57 @@ class _LessonsPageState extends State<LessonsPage> {
   dynamic user;
   List lessonData = [];
   bool lessonsLoaded = false;
+  List assignmentData = [];
+  bool assignmentsLoaded = false;
+  int progress = 0;
+  List<List> prompts = [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+  ];
+
+  TextStyle heading = TextStyle(
+    color: Colors.black,
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.bold,
+    fontSize: 23,
+  );
+
+  TextStyle heading1 = TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+    fontFamily: 'Poppins',
+    fontSize: 21,
+  );
+
+  TextStyle normalText = TextStyle(
+    color: Colors.black,
+    fontFamily: 'DMSans',
+    fontSize: 16,
+  );
 
   getUser() async {
     var token = await Strings().getToken();
@@ -57,7 +110,7 @@ class _LessonsPageState extends State<LessonsPage> {
     dio.options.headers["Authorization"] = "Bearer $token";
     await dio
         .get(
-      '${Strings.localhost}lessons/$courseId',
+      '${Strings.localhost}users/lessons/$courseId',
       options: Options(
         contentType: Headers.jsonContentType,
       ),
@@ -75,10 +128,40 @@ class _LessonsPageState extends State<LessonsPage> {
     });
   }
 
+  getAssignments(courseId) async {
+    var token = await Strings().getToken();
+    Dio dio = Dio();
+    dio.options.headers["Authorization"] = "Bearer $token";
+    await dio
+        .get(
+      '${Strings.localhost}users/courseAssignments/$courseId',
+      options: Options(
+        contentType: Headers.jsonContentType,
+      ),
+    )
+        .then((response) {
+      if (response.statusCode == 200) {
+        setState(() {
+          assignmentData = response.data;
+          for (var assignment in assignmentData) {
+            assignment['prompts'].forEach((prompt) =>
+                prompts[assignmentData.indexOf(assignment)]
+                    .add(prompt['prompt']));
+          }
+          assignmentsLoaded = true;
+        });
+      } else {
+        // err
+        // print(response.statusMessage);
+      }
+    });
+  }
+
   @override
   void initState() {
     getUser();
     getLessons(widget.courseId);
+    getAssignments(widget.courseId);
     super.initState();
   }
 
@@ -117,88 +200,166 @@ class _LessonsPageState extends State<LessonsPage> {
         ],
       ),
       backgroundColor: Color(0xffF1F8FF),
-      body: lessonsLoaded
-          ? ListView.builder(
-              itemBuilder: (BuildContext context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) {
-                      return SlidesPage(
-                        lessonId: lessonData[index]['_id'],
-                      );
-                    }));
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(
-                      left: 30,
-                      right: 30,
-                      bottom: 20,
-                      top: 30,
-                    ),
-                    height: slideHeight * 0.45,
-                    decoration: BoxDecoration(color: Colors.blue[100]),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: slideHeight * 0.45 * 0.7,
-                          width: double.infinity,
-                          child: Image.network(
-                            'https://prod-discovery.edx-cdn.org/media/course/image/0e575a39-da1e-4e33-bb3b-e96cc6ffc58e-8372a9a276c1.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Container(
-                          height: slideHeight * 0.45 * 0.3,
-                          margin: EdgeInsets.only(
-                            left: slideWidth * 0.03,
-                            right: slideWidth * 0.03,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(
-                                  left: slideWidth * 0.03,
-                                  right: slideWidth * 0.03,
-                                  // bottom: slideHeight * 0.01,
-                                  // top: slideHeight * 0.02,
-                                ),
-                                width: slideWidth * 0.58,
-                                child: AutoSizeText(
-                                  '${lessonData[index]['name']}',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontFamily: 'Poppins',
-                                    fontSize: 24,
-                                  ),
-                                  minFontSize: 10,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {},
-                                icon: Icon(
-                                  Icons.keyboard_arrow_right_outlined,
-                                  color: Colors.black,
-                                  size: 40,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              itemCount: lessonData.length,
-            )
-          : Center(
-              child: CircularProgressIndicator(),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: EdgeInsets.only(
+              top: 20,
+              right: 20,
+              left: 20,
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Lessons',
+                  style: heading1,
+                ),
+                lessonsLoaded
+                    ? Container(
+                        height: slideHeight * 0.3,
+                        margin: EdgeInsets.only(
+                          top: 15,
+                        ),
+                        child: lessonData.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'Something went wrong.',
+                                  style: normalText,
+                                ),
+                              )
+                            : ListView.builder(
+                                //physics: NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                scrollDirection: Axis.horizontal,
+                                itemCount: lessonData.length,
+                                itemBuilder: (context, index) {
+                                  return SingleChildScrollView(
+                                    child: Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                    builder: (context) {
+                                              return SlidesPage(
+                                                lessonId: lessonData[index]
+                                                    ['_id'],
+                                                user: user,
+                                                courseId: widget.courseId,
+                                              );
+                                            }));
+                                          },
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.green,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            margin: EdgeInsets.only(right: 15),
+                                            height: slideHeight * 0.3,
+                                            width: slideWidth * 0.4,
+                                            child: Center(
+                                                child: Text(
+                                                    "${lessonData[index]['name']}")),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      )
+                    : Center(
+                        child: CircularProgressIndicator(),
+                      )
+              ],
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.only(
+              top: 20,
+              right: 20,
+              left: 20,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Assignments',
+                  style: heading1,
+                ),
+                lessonsLoaded
+                    ? Container(
+                        height: slideHeight * 0.3,
+                        margin: EdgeInsets.only(
+                          top: 15,
+                        ),
+                        child: assignmentData.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'Something went wrong.',
+                                  style: normalText,
+                                ),
+                              )
+                            : ListView.builder(
+                                //physics: NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                scrollDirection: Axis.horizontal,
+                                itemCount: assignmentData.length,
+                                itemBuilder: (context, index) {
+                                  return SingleChildScrollView(
+                                    child: Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                    builder: (context) {
+                                              return OpenCamera(
+                                                prompts: prompts[index],
+                                                user: user,
+                                                lessonId: assignmentData[index]
+                                                    ['lesson'],
+                                              );
+                                            }));
+                                          },
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.green,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 8),
+                                            margin: EdgeInsets.only(right: 15),
+                                            height: slideHeight * 0.3,
+                                            width: slideWidth * 0.4,
+                                            child: Center(
+                                              child: Text(
+                                                "${assignmentData[index]['heading']}",
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      )
+                    : Center(
+                        child: CircularProgressIndicator(),
+                      )
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

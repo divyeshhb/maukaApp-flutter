@@ -9,10 +9,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
-import 'package:mauka/screens/home_page.dart';
+import 'package:mauka/screens/course_page.dart';
 import 'package:mauka/screens/signup_page.dart';
 import 'package:mauka/services/authenticate.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);

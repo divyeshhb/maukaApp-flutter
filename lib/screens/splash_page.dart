@@ -3,10 +3,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mauka/screens/home_page.dart';
 import 'package:mauka/screens/slides_page.dart';
 import 'package:mauka/screens/get_started.dart';
-import 'package:mauka/screens/home_page.dart';
-import 'package:mauka/screens/video_recorder.dart';
+import 'package:mauka/screens/course_page.dart';
+import 'package:mauka/screens/assignments_screen.dart';
 
 import '../services/current_user.dart';
 import '../strings.dart';
@@ -44,7 +45,7 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   void initState() {
-    Timer(Duration(milliseconds: 00), () {
+    Timer(Duration(milliseconds: 1000), () {
       checkUser();
       // Navigator.of(context)
       //     .pushReplacement(MaterialPageRoute(builder: (context) {

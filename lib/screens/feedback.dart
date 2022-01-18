@@ -152,7 +152,6 @@ class _FeedbackPageState extends State<FeedbackPage> {
             ),
             InkWell(
               onTap: () async {
-                print(feedback);
                 if (feedback != null && feedback!.isNotEmpty) {
                   //print('in here');
                   // await Authenticate().feedback(arguments['token'],

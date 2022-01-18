@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
-import 'package:mauka/screens/home_page.dart';
+import 'package:mauka/screens/course_page.dart';
 import 'package:mauka/screens/login_page.dart';
 import 'package:mauka/services/authenticate.dart';
 
@@ -177,7 +177,7 @@ class _SignupPageState extends State<SignupPage> {
                           storage.write(key: "token", value: token);
                           Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(builder: (context) {
-                            return HomePage();
+                            return CoursePage();
                           }), (Route<dynamic> route) => false);
                         });
                       }

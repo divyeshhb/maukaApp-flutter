@@ -10,14 +10,17 @@ import 'mcqinput_only_text.dart';
 
 class SlideCreator {
   Widget slideCreator(
+    String lessonId,
     String typeOfSlide,
     BuildContext context,
     dynamic slideData,
     double slideHeight,
     PageController slideController,
+    int progress,
   ) {
     if (typeOfSlide == 'intro') {
-      return IntroSlide(context, slideData, slideHeight, slideController);
+      return IntroSlide(
+          context, slideData, slideHeight, slideController, lessonId, progress);
     } else if (typeOfSlide == 'only_text') {
       return OnlyText(context, slideData, slideHeight, slideController);
     } else if (typeOfSlide == 'image_text') {
@@ -29,7 +32,10 @@ class SlideCreator {
     } else if (typeOfSlide == 'textinput_only_text' ||
         typeOfSlide == 'textinput_image_text') {
       return TextInputOnlyText(
-          context, slideData, slideHeight, slideController);
+        data: slideData,
+        slideController: slideController,
+        slideHeight: slideHeight,
+      );
     } else if (typeOfSlide == 'mcqinput_only_text') {
       return McqInputOnlyText(
         data: slideData,

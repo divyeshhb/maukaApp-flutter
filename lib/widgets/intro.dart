@@ -7,14 +7,17 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:mauka/screens/assignments_screen.dart';
+import 'package:mauka/screens/reflect_page.dart';
+import 'package:mauka/screens/splash_page.dart';
 
 //heading
 //image_url
 //subheading
 //button_bool
 
-Widget IntroSlide(
-    BuildContext context, data, slideHeight, PageController slideController) {
+Widget IntroSlide(BuildContext context, data, slideHeight,
+    PageController slideController, lessonId, progress) {
   double slideWidth = MediaQuery.of(context).size.width;
   return Container(
     height: slideHeight,
@@ -96,7 +99,12 @@ Widget IntroSlide(
         ),
         MaterialButton(
           onPressed: () {
-            slideController.nextPage(
+            //change
+            // Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+            //   return ReflectPage(lessonId: lessonId);
+            // }));
+            slideController.animateToPage(
+              progress > 0 ? progress : 1,
               duration: Duration(milliseconds: 500),
               curve: Curves.decelerate,
             );
@@ -105,7 +113,7 @@ Widget IntroSlide(
             child: Container(
               child: Center(
                 child: Text(
-                  'Start Lesson',
+                  progress > 0 ? 'Resume Lesson' : 'Start Lesson',
                   style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 19,

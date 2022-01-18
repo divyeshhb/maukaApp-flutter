@@ -1,34 +1,39 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables
 // ignore_for_file: prefer_const_constructors
 // ignore_for_file: unused_import
+// ignore_for_file: unused_local_variable
+// ignore_for_file: avoid_print
+// ignore_for_file: prefer_const_literals_to_create_immutables
+// ignore_for_file: non_constant_identifier_names
+// ignore_for_file: sized_box_for_whitespace
+// ignore_for_file: unnecessary_string_escapes
+// ignore_for_file: prefer_typing_uninitialized_variables
+// ignore_for_file: prefer_const_constructors_in_immutables
 
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:animated_button/animated_button.dart';
-import 'package:auto_size_text/auto_size_text.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mauka/screens/slides_page.dart';
-import 'package:mauka/screens/lessons_page.dart';
 import 'package:mauka/screens/splash_page.dart';
 import 'package:mauka/services/current_user.dart';
-import 'package:mauka/widgets/slide_creator.dart';
-import 'package:mauka/services/authenticate.dart';
-import 'package:tiktoklikescroller/tiktoklikescroller.dart';
-import 'dart:io';
+import 'package:http/http.dart' as http;
+
 import '../strings.dart';
+import 'lessons_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  HomePage({Key? key}) : super(key: key);
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  dynamic user;
-  List courseData = [];
+  var user;
+  bool userLoaded = false;
   bool coursesLoaded = false;
+  List userCourses = [];
+  dynamic courseId;
+  dynamic course;
 
   getUser() async {
     var token = await Strings().getToken();
@@ -37,6 +42,9 @@ class _HomePageState extends State<HomePage> {
       if (result[0]) {
         setState(() {
           user = jsonDecode(result[1]);
+          getUserCourses(user);
+          // coursesLoaded = true;
+          userLoaded = true;
         });
       } else {
         Navigator.of(context)
@@ -45,43 +53,69 @@ class _HomePageState extends State<HomePage> {
         }));
       }
     } else {
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (context) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
         return SplashPage();
       }));
     }
   }
 
-  getCourses() async {
+  getUserCourses(user) async {
     var token = await Strings().getToken();
-    Dio dio = Dio();
-    dio.options.headers["Authorization"] = "Bearer $token";
-    await dio
-        .get(
-      '${Strings.localhost}courses',
-      options: Options(
-        contentType: Headers.jsonContentType,
-      ),
-    )
-        .then((response) {
+    List courses = user['courses_enrolled'];
+    List allCourses;
+    dynamic res;
+    await http.get(
+      Uri.parse('${Strings.localhost}users/courses'),
+      headers: {HttpHeaders.authorizationHeader: 'Bearer $token'},
+    ).then((response) {
       if (response.statusCode == 200) {
+        allCourses = jsonDecode(response.body);
+        for (var course in courses) {
+          try {
+            var target = allCourses
+                .firstWhere((item) => item['_id'] == course['course']);
+            if (target != null) {
+              userCourses.add(target);
+            }
+          } catch (e) {
+            print(e);
+          }
+        }
+        // courseId = user['courses_enrolled'][0]["course"];
+        courseId = user['courses_enrolled'].last["course"];
+        course = user['courses_enrolled'].last;
         setState(() {
           coursesLoaded = true;
-          courseData = response.data;
         });
-      } else {
-        //err
-        //print(response.statusMessage);
-      }
+      } else {}
     });
   }
 
   @override
   void initState() {
     getUser();
-    getCourses();
     super.initState();
   }
+
+  TextStyle heading = TextStyle(
+    color: Colors.black,
+    fontFamily: 'Poppins',
+    fontWeight: FontWeight.bold,
+    fontSize: 23,
+  );
+
+  TextStyle heading1 = TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.black,
+    fontFamily: 'Poppins',
+    fontSize: 21,
+  );
+
+  TextStyle normalText = TextStyle(
+    color: Colors.black,
+    fontFamily: 'DMSans',
+    fontSize: 16,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -89,113 +123,270 @@ class _HomePageState extends State<HomePage> {
         AppBar().preferredSize.height -
         MediaQuery.of(context).padding.top -
         MediaQuery.of(context).padding.bottom);
-    double slideWidth = MediaQuery.of(context).size.width;
+    var slideWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Homepage',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            color: Colors.black,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        actions: [
-          IconButton(
-            onPressed: () async {
-              var token = await Strings().getToken();
-              Authenticate().logout(token!);
-              Navigator.of(context)
-                  .pushReplacement(MaterialPageRoute(builder: (context) {
-                return SplashPage();
-              }));
-            },
-            icon: Icon(
-              Icons.logout,
-              color: Colors.black,
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: Color(0xffF1F8FF),
-      body: coursesLoaded
-          ? ListView.builder(
-              itemBuilder: (BuildContext context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) {
-                      return LessonsPage(
-                        courseId: courseData[index]['_id'],
-                      );
-                    }));
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(
-                      left: 30,
-                      right: 30,
-                      bottom: 20,
-                      top: 30,
+      backgroundColor: Colors.white,
+      body: userLoaded && coursesLoaded
+          ? SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: slideHeight * 0.1,
+                  ),
+                  Container(
+                    margin: EdgeInsets.symmetric(
+                      horizontal: 20,
                     ),
-                    height: slideHeight * 0.45,
-                    decoration: BoxDecoration(color: Colors.blue[100]),
-                    child: Column(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(
-                          height: slideHeight * 0.45 * 0.7,
-                          width: double.infinity,
-                          child: Image.network(
-                            'https://media.istockphoto.com/photos/path-leads-to-decision-which-changes-the-path-in-two-directions-picture-id1142622077?k=20&m=1142622077&s=612x612&w=0&h=baEJzSolDZlo2V91thUPgmU4wZ_r6ruFSpJdbrLPwos=',
-                            fit: BoxFit.cover,
-                          ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hey ${user['email'].split('@')[0]}',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontFamily: 'Poppins',
+                                fontSize: 23,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Welcome 🎉',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontFamily: 'DMSans',
+                                fontSize: 16,
+                              ),
+                            )
+                          ],
                         ),
-                        Container(
-                          height: slideHeight * 0.45 * 0.3,
-                          margin: EdgeInsets.only(
-                            left: slideWidth * 0.03,
-                            right: slideWidth * 0.03,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                margin: EdgeInsets.only(
-                                  left: slideWidth * 0.03,
-                                  right: slideWidth * 0.03,
-                                  // bottom: slideHeight * 0.01,
-                                  // top: slideHeight * 0.02,
-                                ),
-                                width: slideWidth * 0.58,
-                                child: AutoSizeText(
-                                  'courseName ${index + 1}',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontFamily: 'Poppins',
-                                    fontSize: 24,
-                                  ),
-                                  minFontSize: 10,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {},
-                                icon: Icon(
-                                  Icons.keyboard_arrow_right_outlined,
-                                  color: Colors.black,
-                                  size: 40,
-                                ),
-                              ),
-                            ],
-                          ),
+                        CircleAvatar(
+                          backgroundImage:
+                              user['avatar'] != null && user['avatar'] != ''
+                                  ? NetworkImage(user['avatar'])
+                                  : AssetImage('assets/images/avatar2.png')
+                                      as ImageProvider,
+                          radius: slideWidth * 0.07,
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-              itemCount: courseData.length,
+                  Container(
+                    margin: EdgeInsets.only(
+                      top: 5,
+                      right: 20,
+                      left: 20,
+                    ),
+                    child: Divider(
+                      color: Colors.black,
+                      thickness: 1,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.of(context)
+                          .push(MaterialPageRoute(builder: (context) {
+                        return LessonsPage(
+                          courseId: courseId,
+                        );
+                      }));
+                    },
+                    child: Container(
+                      height: slideHeight * 0.12,
+                      //width: slideWidth * 0.8,
+                      decoration: BoxDecoration(
+                        color: Colors.orange[300],
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 3,
+                            color: Colors.black38,
+                            //offset: Offset.fromDirection(-100),
+                          )
+                        ],
+                        borderRadius: BorderRadius.circular(
+                          5,
+                        ),
+                      ),
+                      margin: EdgeInsets.only(
+                        top: 20,
+                        right: 20,
+                        left: 20,
+                      ),
+                      padding: EdgeInsets.only(
+                        //top: 10,
+                        // bottom: 10,
+                        right: 20,
+                        left: 20,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Resume Course',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'Poppins',
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '${course['name']}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'DMSans',
+                                  fontSize: 14,
+                                ),
+                              )
+                            ],
+                          ),
+                          CircleAvatar(
+                            backgroundColor: Colors.white,
+                            backgroundImage:
+                                user['avatar'] != null && user['avatar'] != ''
+                                    ? NetworkImage(user['avatar'])
+                                    : AssetImage('assets/images/resume.png')
+                                        as ImageProvider,
+                            radius: slideWidth * 0.07,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    margin: EdgeInsets.only(
+                      top: 20,
+                      right: 20,
+                      left: 20,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          'My Courses',
+                          style: heading1,
+                        ),
+                        coursesLoaded
+                            ? Container(
+                                height: slideHeight * 0.3,
+                                margin: EdgeInsets.only(
+                                  top: 15,
+                                ),
+                                child: userCourses.isEmpty
+                                    ? Center(
+                                        child: Text(
+                                          'Enroll in a course to get started.',
+                                          style: normalText,
+                                        ),
+                                      )
+                                    : ListView.builder(
+                                        //physics: NeverScrollableScrollPhysics(),
+                                        shrinkWrap: true,
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: userCourses.length,
+                                        itemBuilder: (context, index) {
+                                          return SingleChildScrollView(
+                                            child: Row(
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    Navigator.of(context).push(
+                                                        MaterialPageRoute(
+                                                            builder: (context) {
+                                                      return LessonsPage(
+                                                        courseId:
+                                                            userCourses[index]
+                                                                ['_id'],
+                                                      );
+                                                    }));
+                                                  },
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.blue,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
+                                                    ),
+                                                    margin: EdgeInsets.only(
+                                                        right: 15),
+                                                    height: slideHeight * 0.3,
+                                                    width: slideWidth * 0.4,
+                                                    child: Center(
+                                                        child: Text(
+                                                            "${userCourses[index]['name']}")),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                              )
+                            : Center(
+                                child: CircularProgressIndicator(),
+                              )
+                      ],
+                    ),
+                  ),
+                  // Container(
+                  //   margin: EdgeInsets.only(
+                  //     top: 30,
+                  //     right: 20,
+                  //     left: 20,
+                  //   ),
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     mainAxisAlignment: MainAxisAlignment.start,
+                  //     children: [
+                  //       Text(
+                  //         'Explore Courses',
+                  //         style: heading1,
+                  //       ),
+                  //       Container(
+                  //         height: slideHeight * 0.3,
+                  //         margin: EdgeInsets.only(
+                  //           top: 15,
+                  //         ),
+                  //         child: ListView.builder(
+                  //           //physics: NeverScrollableScrollPhysics(),
+                  //           shrinkWrap: true,
+                  //           scrollDirection: Axis.horizontal,
+                  //           itemCount: 10,
+                  //           itemBuilder: (context, index) {
+                  //             return SingleChildScrollView(
+                  //               child: Row(
+                  //                 children: [
+                  //                   Container(
+                  //                     decoration: BoxDecoration(
+                  //                       color: Colors.green,
+                  //                       borderRadius: BorderRadius.circular(10),
+                  //                     ),
+                  //                     margin: EdgeInsets.only(right: 15),
+                  //                     height: slideHeight * 0.3,
+                  //                     width: slideWidth * 0.4,
+                  //                     child: Center(
+                  //                         child: Text("Course ${index + 1}")),
+                  //                   ),
+                  //                 ],
+                  //               ),
+                  //             );
+                  //           },
+                  //         ),
+                  //       )
+                  //     ],
+                  //   ),
+                  // ),
+                ],
+              ),
             )
           : Center(
               child: CircularProgressIndicator(),
