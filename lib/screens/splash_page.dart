@@ -49,7 +49,7 @@ class _SplashPageState extends State<SplashPage> {
       checkUser();
       // Navigator.of(context)
       //     .pushReplacement(MaterialPageRoute(builder: (context) {
-      // return CoursePage();
+      // return HomePage();
       // }));
     });
     super.initState();

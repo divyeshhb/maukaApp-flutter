@@ -2,8 +2,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class Strings {
   static String localhost1 = 'http://10.0.2.2:3000/'; //android
-  static String localhost = 'http://127.0.0.1:3000/'; //ios
-  static String localhost2 = 'https://mauka-app.herokuapp.com/'; //universal
+  static String localhost2 = 'http://127.0.0.1:3000/'; //ios
+  static String localhost = 'https://mauka-app.herokuapp.com/'; //universal
 
   String? userToken;
 

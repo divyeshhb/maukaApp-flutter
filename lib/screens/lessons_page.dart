@@ -292,7 +292,7 @@ class _LessonsPageState extends State<LessonsPage> {
                   'Assignments',
                   style: heading1,
                 ),
-                lessonsLoaded
+                assignmentsLoaded
                     ? Container(
                         height: slideHeight * 0.3,
                         margin: EdgeInsets.only(
@@ -329,7 +329,7 @@ class _LessonsPageState extends State<LessonsPage> {
                                           },
                                           child: Container(
                                             decoration: BoxDecoration(
-                                              color: Colors.green,
+                                              color: Colors.red,
                                               borderRadius:
                                                   BorderRadius.circular(10),
                                             ),

@@ -103,10 +103,8 @@ Widget IntroSlide(BuildContext context, data, slideHeight,
             // Navigator.of(context).push(MaterialPageRoute(builder: (context) {
             //   return ReflectPage(lessonId: lessonId);
             // }));
-            slideController.animateToPage(
+            slideController.jumpToPage(
               progress > 0 ? progress : 1,
-              duration: Duration(milliseconds: 500),
-              curve: Curves.decelerate,
             );
           },
           child: Center(

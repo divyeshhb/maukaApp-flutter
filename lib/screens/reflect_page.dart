@@ -1,18 +1,27 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_typing_uninitialized_variables
 // ignore_for_file: unused_import
 // ignore_for_file: avoid_print
 // ignore_for_file: prefer_const_literals_to_create_immutables
 
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:mauka/screens/home_page.dart';
+import 'package:mauka/screens/splash_page.dart';
 import 'package:mauka/services/authenticate.dart';
+import 'package:mauka/services/current_user.dart';
+import 'package:mauka/strings.dart';
 
 class ReflectPage extends StatefulWidget {
   const ReflectPage({
     Key? key,
-    this.lessonId,
+    @required this.lessonId,
+    @required this.user,
   }) : super(key: key);
 
   final String? lessonId;
+  final user;
 
   @override
   _ReflectPageState createState() => _ReflectPageState();
@@ -24,8 +33,10 @@ class _ReflectPageState extends State<ReflectPage> {
     'Question 2?',
     'Question 3?',
     'Question 4?',
-    'Question 5?'
+    'Question 5?',
   ];
+  bool reflectLoaded = false;
+  bool sendingResponse = false;
 
   List<TextEditingController> editingControllers = [
     TextEditingController(),
@@ -35,7 +46,104 @@ class _ReflectPageState extends State<ReflectPage> {
     TextEditingController(),
     TextEditingController(),
     TextEditingController(),
+    TextEditingController(),
+    TextEditingController(),
+    TextEditingController(),
   ];
+
+  getReflectQuestions() async {
+    var token = await Strings().getToken();
+    Dio dio = Dio();
+    dio.options.headers["Authorization"] = "Bearer $token";
+    var response = await dio.get(
+      '${Strings.localhost}users/courseAssignments/${widget.lessonId}',
+      options: Options(
+        contentType: Headers.jsonContentType,
+      ),
+    );
+    if (response.statusCode == 200) {
+      setState(() {
+        //TODO: change here
+        //reflectData = response.data;
+        reflectLoaded = true;
+      });
+    }
+  }
+
+  sendReflect(reflectResponse) async {
+    var token = await Strings().getToken();
+    Dio dio = Dio();
+    dio.options.headers["Authorization"] = "Bearer $token";
+
+    Response response = await dio
+        .post(
+      '${Strings.localhost}users/saveReflect/${widget.lessonId}',
+      data: jsonEncode({
+        'email': widget.user['email'],
+        'responses': reflectResponse,
+      }),
+      options: Options(
+        contentType: Headers.jsonContentType,
+      ),
+    )
+        .then((resp) {
+      setState(() {
+        sendingResponse = false;
+      });
+      if (resp.statusCode == 200) {
+        Navigator.of(context)
+            .pushReplacement(MaterialPageRoute(builder: (context) {
+          return HomePage();
+        }));
+      }
+      return resp;
+    });
+  }
+
+  var user;
+  getOldResponses() async {
+    var token = await Strings().getToken();
+    if (token != null && token.isNotEmpty) {
+      var result = await CurrentUser().checkToken(token);
+      if (result[0]) {
+        user = jsonDecode(result[1]);
+        if (user['reflect_response'] != null &&
+            user['reflect_response'].isNotEmpty) {
+          try {
+            var response = user['reflect_response']
+                .lastWhere((element) => element['lesson'] == widget.lessonId);
+            if (response != null) {
+              print(response);
+              for (int i = 0; i < response['responses'].length; i++) {
+                editingControllers[i] =
+                    TextEditingController(text: response['responses'][i]);
+              }
+              setState(() {});
+            }
+          } catch (e) {
+            print(e);
+          }
+        }
+      } else {
+        Navigator.of(context)
+            .pushReplacement(MaterialPageRoute(builder: (context) {
+          return SplashPage();
+        }));
+      }
+    } else {
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (context) {
+        return SplashPage();
+      }));
+    }
+  }
+
+  @override
+  void initState() {
+    getReflectQuestions();
+    getOldResponses();
+    super.initState();
+  }
 
   List reflectRes = [];
 
@@ -90,6 +198,7 @@ class _ReflectPageState extends State<ReflectPage> {
               child: PageView.builder(
                 //physics: NeverScrollableScrollPhysics(),
                 controller: pageController,
+                itemCount: reflectData.length,
                 itemBuilder: (context, position) {
                   return Container(
                     margin: EdgeInsets.symmetric(
@@ -205,10 +314,19 @@ class _ReflectPageState extends State<ReflectPage> {
                                       // bottom: 30,
                                     ),
                                     child: GestureDetector(
-                                      onTap: () {
+                                      onTap: () async {
+                                        setState(() {
+                                          sendingResponse = true;
+                                        });
+                                        reflectRes = [];
                                         for (var editor in editingControllers) {
-                                          reflectRes.add(editor.text);
+                                          if (editingControllers
+                                                  .indexOf(editor) <
+                                              reflectData.length) {
+                                            reflectRes.add(editor.text);
+                                          }
                                         }
+                                        sendReflect(reflectRes);
                                       },
                                       child: CircleAvatar(
                                         backgroundColor:
@@ -216,10 +334,15 @@ class _ReflectPageState extends State<ReflectPage> {
                                         radius:
                                             MediaQuery.of(context).size.width *
                                                 0.065,
-                                        child: Icon(
-                                          Icons.arrow_forward,
-                                          color: Colors.white,
-                                        ),
+                                        child: !sendingResponse
+                                            ? Icon(
+                                                Icons.arrow_forward,
+                                                color: Colors.white,
+                                              )
+                                            : Center(
+                                                child:
+                                                    CircularProgressIndicator(),
+                                              ),
                                       ),
                                     ),
                                   ),
@@ -229,7 +352,6 @@ class _ReflectPageState extends State<ReflectPage> {
                     ),
                   );
                 },
-                itemCount: reflectData.length,
               )),
         ],
       ),

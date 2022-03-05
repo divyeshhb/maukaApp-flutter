@@ -111,6 +111,7 @@ class _OpenCameraState extends State<OpenCamera> {
                   .pushReplacement(MaterialPageRoute(builder: (context) {
                 return ReflectPage(
                   lessonId: widget.lessonId,
+                  user: widget.user,
                 );
               }));
               //print(response);

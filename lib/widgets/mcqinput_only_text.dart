@@ -42,9 +42,11 @@ class _McqInputOnlyTextState extends State<McqInputOnlyText> {
       var result = await CurrentUser().checkToken(token);
       if (result[0]) {
         user = jsonDecode(result[1]);
-        setState(() {
-          optionsLoaded = true;
-        });
+        if (mounted) {
+          setState(() {
+            optionsLoaded = true;
+          });
+        }
         if (user['slide_response'] != null &&
             user['slide_response'].isNotEmpty) {
           try {
